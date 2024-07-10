@@ -2,92 +2,114 @@ import tkinter, time, random
 from tkinter import messagebox
 
 def set_tile(row, col):
-    global currPlayer, gameOver, moves
-
+    global  gameOver, moves
     if gameOver:
         return
     if board[row][col]["text"] !="":    
         return
-
     board[row][col]["text"] = PlayerSign
     
     moves+=1
-    if moves>4:checkWinner()
-    currPlayer = 1
+    if checkWin(PlayerSign,board):
+        gameOver=True
+        label["text"]="YOU WIN"
+    if moves==9:
+        checkTie(True)
+        gameOver = True
+    miniMaxMove()
+    
+def checkTie(game):
+    if checkWin(AISign,board) == checkWin(PlayerSign,board) == False:
+        if game: label["text"]="TIE!"
+        return True
+    return False
 
-    aiMove()
-
-def aiMove():
-    global moves, gameOver, currPlayer
+def miniMaxMove():
+    global moves, gameOver
     if gameOver:
         return
-    movePicked = False
-    while(movePicked == False):
-        randRow = random.randint(0,2)
-        randCol = random.randint(0,2)
-        if board[randRow][randCol]["text"] == "":
-            board[randRow][randCol]["text"] = AISign
-            movePicked = True
-    if moves>4:checkWinner()
-    moves+=1
-    movePicked = False
-    currPlayer = 0
+    bestScore = -1000
+    bestMoveX = -10
+    bestMoveY = -10
+    for row in range(3):
+        for col in range(3):
+            if board[row][col]["text"] == "":
+                board[row][col]["text"] = AISign
+                score = miniMax(board, 0, False)
+                board[row][col]["text"] = ""
+                if score > bestScore:
+                    print("insideBestMOveChange")
+                    bestScore = score
+                    bestMoveX = row
+                    bestMoveY = col
+    if bestMoveX != -10 and bestMoveY != -10:
+        board[bestMoveX][bestMoveY]["text"] = AISign
+        if checkWin(AISign,board):
+            gameOver=True
+            label["text"]="YOU LOSE"
+        moves+=1
 
-def checkWinner():
-    global gameOver
-    print("check winner")
+def isBoardFull():
     for i in range(3):
-        if board[i][0]["text"] == board[i][1]["text"] == board[i][2]["text"] and board[i][0]["text"]!="":
-            print("Player won")
-            if currPlayer == 0:
-                label['text'] = "YOU WIN!"
-            else:
-                label['text'] = "YOU LOSE"
-            gameOver = True
-            
+        for j in range(3):
+            if board[i][j]["text"]== "":
+                return False
+    return True
+
+def miniMax(mboard, depth, isMax):
+    if checkWin(AISign,mboard):
+        return 100000
+    elif checkWin(PlayerSign,mboard):
+        return -100000
+    elif isBoardFull():
+        return 0
+
+    if isMax:
+        bestScore = -1000
+        for row in range(3):
+            for col in range(3):
+                if mboard[row][col]["text"] == "":
+                    mboard[row][col]["text"] = AISign
+                    score = miniMax(mboard, depth+1, False)
+                    mboard[row][col]["text"] = ""
+                    bestScore = max(score, bestScore)
+        return bestScore
+    else:
+        bestScore = 1000
+        for row in range(3):
+            for col in range(3):
+                if mboard[row][col]["text"] == "":
+                    mboard[row][col]["text"] = PlayerSign
+                    score = miniMax(mboard, depth+1, True)
+                    mboard[row][col]["text"] = ""
+                    bestScore = min(score, bestScore)
+        return bestScore
+    
+def checkWin(sign, mboard):
     for i in range(3):
-        if board[0][i]["text"] == board[1][i]["text"] == board[2][i]["text"] and board[0][i]["text"]!="":
-            print("Player won")
-            if currPlayer == 0:
-                label['text'] = "YOU WIN!"
-            else:
-                label['text'] = "YOU LOSE"
-            gameOver = True
-            
-    if board[0][0]["text"] == board[1][1]["text"] == board[2][2]["text"] and board[0][0]["text"]!="":
-        print("Player won")
-        if currPlayer == 0:
-            label['text'] = "YOU WIN!"
-        else:
-            label['text'] = "YOU LOSE"
-        gameOver = True
-        
-    if board[2][0]["text"] == board[1][1]["text"] == board[0][2]["text"] and board[2][0]["text"]!="":
-        print("Player won")
-        if currPlayer == 0:
-            label['text'] = "YOU WIN!"
-        else:
-            label['text'] = "YOU LOSE"
-        gameOver = True
-    if moves == 9 and gameOver == False:
-        gameOver = True
-        label['text'] = "TIE!!"
-        
+        if mboard[i][0]["text"] == mboard[i][1]["text"] == mboard[i][2]["text"] and mboard[i][0]["text"]==sign:
+            return True
+    for i in range(3):
+        if mboard[0][i]["text"] == mboard[1][i]["text"] == mboard[2][i]["text"] and mboard[0][i]["text"]==sign:   
+            return True
+    if mboard[0][0]["text"] == mboard[1][1]["text"] == mboard[2][2]["text"] and mboard[0][0]["text"]==sign:
+        return True
+    if mboard[2][0]["text"] == mboard[1][1]["text"] == mboard[0][2]["text"] and mboard[2][0]["text"]==sign:
+        return True
+    return False
 
 def new_game():
-    global moves, gameOver, currPlayer
+    global moves, gameOver
     print("restart pressed")
     for row in range(3):
         for col in range(3):
             board[row][col]["text"] = ""
             moves = 0
             gameOver = False
-            currPlayer = 0
 
     label["text"] = "GAME ON!"
 
-#0 is player, 1 is AI
-currPlayer = 0
+
 gameOver = False
 moves = 0
 PlayerSign = "X"
