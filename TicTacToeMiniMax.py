@@ -1,79 +1,122 @@
-import tkinter, time
-
-
+import tkinter
 
 def set_tile(row, col):
-    global currPlayer
-    
-    if game_over:
+    global  gameOver, moves
+    if gameOver:
         return
-    
     if board[row][col]["text"] !="":    
         return
+    board[row][col]["text"] = PlayerSign
     
-    board[row][col]["text"] = currPlayer
-    
-    
+    moves+=1
+    if checkWin(PlayerSign,board):
+        gameOver=True
+        label["text"]="YOU WIN"
+    if moves==9:
+        checkTie(True)
+        gameOver = True
+    miniMaxMove()
 
-    if currPlayer == playerO:
-        currPlayer = playerX
-    else:
-        currPlayer = playerO
-        aiMove()
+def checkTie(game):
+    if checkWin(AISign,board) == checkWin(PlayerSign,board) == False:
+        if game: label["text"]="TIE!"
+        return True
+    return False
 
-    label['text'] = currPlayer+"'s turn"
-    # print("check winner")
-      
-    checkWinner()
-def aiMove():
-    print("inside Ai move")
-    pass
-def checkWinner():
-    global turns, game_over
-    
-
+def miniMaxMove():
+    global moves, gameOver
+    if gameOver:
+        return
+    bestScore = -1000
+    bestMoveX = -10
+    bestMoveY = -10
     for row in range(3):
-        if(board[row][0]["text"] == board[row][1]["text"] == board[row][2]["text"] and board[row][0]["text"]!= ""):
-            game_over = True
-            label.config(text = board[row][0]["text"]+" is the winner!", foreground=colorYellow)
-    for col in range(3):
-        if(board[0][col]["text"] == board[1][col]["text"] == board[2][col]["text"] and board[0][col]["text"]!= ""):
-            game_over = True
-            label.config(text = board[0][col]["text"]+" is the winner!", foreground=colorYellow)
-    if( board[0][0]["text"]!= "" and (board[0][0]["text"] == board[1][1]["text"] == board[2][2]["text"])):
+        for col in range(3):
+            if board[row][col]["text"] == "":
+                board[row][col]["text"] = AISign
+                score = miniMax(board, 0,-1000000,1000000, False)
+                board[row][col]["text"] = ""
+                if score > bestScore:
+                    bestScore = score
+                    bestMoveX = row
+                    bestMoveY = col
+    if bestMoveX != -10 and bestMoveY != -10:
+        board[bestMoveX][bestMoveY]["text"] = AISign
+        if checkWin(AISign,board):
+            gameOver=True
+            label["text"]="YOU LOSE"
+        moves+=1
 
-        game_over = True
-        label.config(text = board[0][0]["text"]+" is the winner!", foreground=colorYellow)
-    if(board[2][0]["text"]!="" and (board[2][0]["text"] == board[1][1]["text"] == board[0][2]["text"])):
-        game_over = True
-        label.config(text = board[2][0]["text"]+" is the winner!", foreground=colorYellow)
-    
-    turns+=1
-    if(turns == 9):
-        game_over == True
-        label.config(text="Tie!", foreground=colorYellow)
-    
+def isBoardFull():
+    for i in range(3):
+        for j in range(3):
+            if board[i][j]["text"]== "":
+                return False
+    return True
 
-    # print("this is currPlayer: "+currPlayer)
+def miniMax(mboard, depth, alpha, beta, isMax):
+    if checkWin(AISign,mboard):
+        return 100000
+    elif checkWin(PlayerSign,mboard):
+        return -100000
+    elif isBoardFull():
+        return 0
+
+    if isMax:
+        bestScore = -1000
+        for row in range(3):
+            for col in range(3):
+                if mboard[row][col]["text"] == "":
+                    mboard[row][col]["text"] = AISign
+                    score = miniMax(mboard, depth+1, alpha, beta , False)
+                    mboard[row][col]["text"] = ""
+                    bestScore = max(score, bestScore)
+                    alpha = max(alpha, score)
+                    if beta<=alpha:
+                        break
+        return bestScore
+    else:
+        bestScore = 1000
+        for row in range(3):
+            for col in range(3):
+                if mboard[row][col]["text"] == "":
+                    mboard[row][col]["text"] = PlayerSign
+                    score = miniMax(mboard, depth+1, alpha, beta, True)
+                    mboard[row][col]["text"] = ""
+                    bestScore = min(score, bestScore)
+                    beta = min(beta, score)
+                    if beta <= alpha:
+                        break
+        return bestScore
+    
+def checkWin(sign, mboard):
+    for i in range(3):
+        if mboard[i][0]["text"] == mboard[i][1]["text"] == mboard[i][2]["text"] and mboard[i][0]["text"]==sign:
+            return True
+    for i in range(3):
+        if mboard[0][i]["text"] == mboard[1][i]["text"] == mboard[2][i]["text"] and mboard[0][i]["text"]==sign:   
+            return True
+    if mboard[0][0]["text"] == mboard[1][1]["text"] == mboard[2][2]["text"] and mboard[0][0]["text"]==sign:
+        return True
+    if mboard[2][0]["text"] == mboard[1][1]["text"] == mboard[0][2]["text"] and mboard[2][0]["text"]==sign:
+        return True
+    return False
+
 def new_game():
-    global turns, game_over
-    print("restart pressed")
+    global moves, gameOver
     for row in range(3):
         for col in range(3):
             board[row][col]["text"] = ""
-            turns = 0
-            game_over = False
-            currPlayer = playerX
-            label.config(text = currPlayer+" 's turn", foreground="white")
+            moves = 0
+            gameOver = False
 
-    print(game_over)
-    pass
+    label["text"] = "GAME ON!"
 
 
-
-playerX = 'X'
-playerO = 'O'
-currPlayer = playerX
+gameOver = False
+moves = 0
+PlayerSign = "X"
+AISign = "O"
 
 board = [[0,0,0],
          [0,0,0],
@@ -84,30 +127,30 @@ colorYellow = "#ffde57"
 colorGray = "#343434"
 colorLightGray = "646464"
 colorBlack = "#000000"
+
+
+#creates buttons
 window = tkinter.Tk()
-
-
 turns = 0
-game_over = False
-
 window.title("Tic Tac Toe")
 window.resizable(False, False)
-
 frame = tkinter.Frame(window)
-  
-label = tkinter.Label(frame, text = currPlayer+" 's turn", font = ("Consolas", 20), background = colorBlack, foreground = "white")
+label = tkinter.Label(frame, text = "GAME ON!", font = ("Consolas", 20), background = colorBlack, foreground = "white")
 label.grid(row=0, column=0, columnspan = 3, sticky = "we")
 for row in range(3): 
     for column in range(3):
-        board[row][column] = tkinter.Button(frame, text = "", font = ("Consolas", 50, "bold"), background = colorGray, foreground = colorBlue, width = 4, height = 2, command=lambda row=row, column = column: set_tile(row, column))
+        board[row][column] = tkinter.Button(frame, text = "", font = ("Consolas", 50, "bold"), bg = 'blue', foreground = colorBlue, width = 4, height = 2, command=lambda row=row, column = column: set_tile(row, column))
         board[row][column].grid(row=row+1, column = column)
 
 
 
-
-button = tkinter.Button(frame, text = "restart", font=("Consolas", 20), background = colorYellow, foreground=colorBlack, command= new_game)
+#restart game button
+button = tkinter.Button(frame, text = "RESTART", font=("Consolas", 20), background = colorYellow, foreground=colorBlack, command= new_game)
 button.grid(row=4, column=0, columnspan=3, sticky="we")#sticky stretches the button out to both sides
-#we means west to eats, ns means north to south
+#we means west to eats, ns means north to south``
+
+
+#Centers window
 frame.pack()
 window.update()
 window_width = window.winfo_width()
@@ -122,10 +165,4 @@ window_y = int((screen_height/2)-(window_height/2))
 window.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}")
 
 
-
-window.mainloop()# keeps window open even after code ends
-
-
-
-
-
+window.mainloop()
