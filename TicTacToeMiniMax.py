@@ -1,5 +1,4 @@
-import tkinter, time, random
-from tkinter import messagebox
+import tkinter
 
 def set_tile(row, col):
     global  gameOver, moves
@@ -17,7 +16,7 @@ def set_tile(row, col):
         checkTie(True)
         gameOver = True
     miniMaxMove()
-    
+
 def checkTie(game):
     if checkWin(AISign,board) == checkWin(PlayerSign,board) == False:
         if game: label["text"]="TIE!"
@@ -35,10 +34,9 @@ def miniMaxMove():
         for col in range(3):
             if board[row][col]["text"] == "":
                 board[row][col]["text"] = AISign
-                score = miniMax(board, 0, False)
+                score = miniMax(board, 0,-1000000,1000000, False)
                 board[row][col]["text"] = ""
                 if score > bestScore:
-                    print("insideBestMOveChange")
                     bestScore = score
                     bestMoveX = row
                     bestMoveY = col
@@ -56,7 +54,7 @@ def isBoardFull():
                 return False
     return True
 
-def miniMax(mboard, depth, isMax):
+def miniMax(mboard, depth, alpha, beta, isMax):
     if checkWin(AISign,mboard):
         return 100000
     elif checkWin(PlayerSign,mboard):
@@ -70,9 +68,12 @@ def miniMax(mboard, depth, isMax):
             for col in range(3):
                 if mboard[row][col]["text"] == "":
                     mboard[row][col]["text"] = AISign
-                    score = miniMax(mboard, depth+1, False)
+                    score = miniMax(mboard, depth+1, alpha, beta , False)
                     mboard[row][col]["text"] = ""
                     bestScore = max(score, bestScore)
+                    alpha = max(alpha, score)
+                    if beta<=alpha:
+                        break
         return bestScore
     else:
         bestScore = 1000
@@ -80,9 +81,12 @@ def miniMax(mboard, depth, isMax):
             for col in range(3):
                 if mboard[row][col]["text"] == "":
                     mboard[row][col]["text"] = PlayerSign
-                    score = miniMax(mboard, depth+1, True)
+                    score = miniMax(mboard, depth+1, alpha, beta, True)
                     mboard[row][col]["text"] = ""
                     bestScore = min(score, bestScore)
+                    beta = min(beta, score)
+                    if beta <= alpha:
+                        break
         return bestScore
     
 def checkWin(sign, mboard):
@@ -100,7 +104,6 @@ def checkWin(sign, mboard):
 
 def new_game():
     global moves, gameOver
-    print("restart pressed")
     for row in range(3):
         for col in range(3):
             board[row][col]["text"] = ""
